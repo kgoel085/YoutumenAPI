@@ -3,9 +3,11 @@
 namespace App;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Notifications\Notifiable;
 
 class UserVerify extends Model
 {
+    use Notifiable;
 
     protected $table = "user_verify";
     /**
