@@ -14,3 +14,10 @@
 $router->get('/', function () use ($router) {
     return $router->app->version();
 });
+
+$router->post('/register', [
+    'as' => 'register.user', 'uses' => 'VerifyUserController@register'
+]);
+$router->get('/verify/{token}', [
+    'as' => 'verify.user', 'uses' => 'VerifyUserController@verifyToken'
+]);
