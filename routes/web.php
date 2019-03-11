@@ -21,6 +21,11 @@ $router->get('/verify/{token}', [
     'as' => 'verify.user', 'uses' => 'VerifyUserController@verifyToken'
 ]);
 
+//Below route will be used to generate a JWT token
+$router->post('/generateToken', [
+    'as' => 'generate.token', 'uses' => 'JWTController@generateToken'
+]);
+
 /**
  * Below routes require JWT token in order to pass
  */
