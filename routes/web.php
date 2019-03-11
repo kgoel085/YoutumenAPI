@@ -11,13 +11,25 @@
 |
 */
 
-$router->get('/', function () use ($router) {
-    return $router->app->version();
-});
-
+/**
+ * Below routes handles the user verification and reistration
+ */
 $router->post('/register', [
     'as' => 'register.user', 'uses' => 'VerifyUserController@register'
 ]);
 $router->get('/verify/{token}', [
     'as' => 'verify.user', 'uses' => 'VerifyUserController@verifyToken'
 ]);
+
+/**
+ * Below routes require JWT token in order to pass
+ */
+$router->group(['middleware' => 'jwt.auth'], function () use ($router) {
+    $router->get('/', function ()    {
+        return 'Test Route';
+    });
+});
+
+// $router->get('/', function () use ($router) {
+//     return $router->app->version();
+// });
