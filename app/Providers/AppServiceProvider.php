@@ -18,4 +18,12 @@ class AppServiceProvider extends ServiceProvider
             return $app->loadComponent('mail', 'Illuminate\Mail\MailServiceProvider', 'mailer'); 
         });
     }
+
+    public function boot(){
+        //To add custom roues -- Example
+        // $this->app['router']->group(['prefix' => 'my-module'], function ($router) {
+        //     $router->get('my-route', 'MyVendor\MyPackage\MyController@action');
+        //     $router->get('my-second-route', 'MyVendor\MyPackage\MyController@otherAction');
+        // });
+    }
 }
