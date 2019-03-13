@@ -45,7 +45,7 @@ class JWTAuth
             ], 400);
         } catch(Exception $e) {
             return response()->json([
-                'error' => 'An error while decoding token.'
+                'error' => 'An error while decoding token. '.$e->getMessage()
             ], 400);
         }
 
