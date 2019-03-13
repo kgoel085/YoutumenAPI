@@ -1,0 +1,36 @@
+{
+    "Global":{
+        "key": "AIzaSyDinDih2Xvucwcl_5a--3EOKy65UAstW4A",
+        "url": "https://www.googleapis.com/youtube/v3"
+    },
+    "Endpoints":{
+        "locations":{
+            "params": {},
+            "endpoint": "i18nRegions"
+        },
+        "home":{
+            "params": {"chart": "mostpopular", "maxResults": 5, "fields": "nextPageToken,pageInfo,items(snippet/channelId)"},
+            "endpoint":"videos"
+        },
+        "trending":{
+            "params": {"chart": "mostpopular", "maxResults": 10},
+            "endpoint":"videos"
+        },
+        "channel":{
+            "params": {"part": "snippet,contentDetails", "fields": "items(id,contentDetails,snippet(title, thumbnails, description))", "id": null},
+            "endpoint": "channels"
+        },
+        "playlist":{
+            "params":{"part": "snippet,contentDetails", "maxResults": 8, "fields": "items(snippet(resourceId/videoId))", "playlistId": null},
+            "endpoint": "playlistItems"
+        },
+        "video":{
+            "params":{"part": "snippet,contentDetails", "id": null},
+            "endpoint":"videos"
+        },
+        "search":{
+            "endpoint":"search",
+            "params":{"part": "snippet", "maxResults": 15, "order": "relevance"}
+        }
+    }   
+}

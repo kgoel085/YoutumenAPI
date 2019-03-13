@@ -29,10 +29,8 @@ $router->post('/generateToken', [
 /**
  * Below routes require JWT token in order to pass
  */
-$router->group(['middleware' => 'jwt.auth'], function () use ($router) {
-    $router->get('/', function ()    {
-        return 'Test Route';
-    });
+$router->group(['middleware' => 'jwt.auth', 'prefix' => 'api_v1'], function () use ($router) {
+    $router->get('/{action}', 'EndPointController@getAction');
 });
 
 // $router->get('/', function () use ($router) {
