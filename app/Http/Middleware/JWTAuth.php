@@ -54,6 +54,14 @@ class JWTAuth
         // Now let's put the user in the request class so that you can grab it from there
         $request->auth = $user;
 
+        //Check if configuration file exists or not 
+        $configFile = str_replace('\\', '/', base_path()).'/config/endpoints.json';
+        if(!file_exists($configFile)){
+            return response()->json([
+                'error' => 'Endpoint configuration does not exists'
+            ], 404);
+        }
+
         return $next($request);
     }
 }
