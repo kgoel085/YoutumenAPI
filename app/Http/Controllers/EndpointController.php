@@ -50,19 +50,32 @@ class EndpointController extends Controller
      * All the rquests will be validated and then passed on 
      */
     public function getAction($action = null){
+        //Check if current action is allowed or not
         if(!$this->checkAction($action)){
             return response()->json([
                 'error' => 'Invalid action provided.'
             ], 400);
         }
 
-        $this->currentAction = trim($action);
+        //Check if request parameters are also allowed or not
+        $validParams = $this->checkParameters();
+        if(!$validParams['Status']){
+            return response()->json([
+                'error' => 'Following parameters are not allowed. Invalid parameters: '
+            ], 400);
+        }
+
+
+        
     }
 
     public function checkAction(&$action){
         $returnVal = false;
 
-        if($action || in_array($action, $this->configObj['AllowedEndpoints'])) $returnVal = true;
+        if($action || in_array($action, $this->configObj['AllowedEndpoints'])){
+            $this->currentAction = trim($action);
+            $returnVal = true;
+        }
 
         return $returnVal;
     }
