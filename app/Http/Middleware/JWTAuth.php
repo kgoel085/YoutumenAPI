@@ -59,7 +59,7 @@ class JWTAuth
         if(!file_exists($configFile)){
             return response()->json([
                 'error' => 'Endpoint configuration does not exists'
-            ], 404);
+            ], 503);
         }
 
         return $next($request);
