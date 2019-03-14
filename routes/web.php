@@ -30,7 +30,7 @@ $router->post('/generateToken', [
  * Below routes require JWT token in order to pass
  */
 $router->group(['middleware' => 'jwt.auth', 'prefix' => 'api_v1'], function () use ($router) {
-    $router->get('/{action}', 'EndPointController@getAction');
+    $router->get('/{action}', 'EndPointController@performAction');
 });
 
 // $router->get('/', function () use ($router) {
