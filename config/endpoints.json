@@ -1,7 +1,6 @@
 {
     "Global":{
-        "key": "AIzaSyDinDih2Xvucwcl_5a--3EOKy65UAstW4A",
-        "url": "https://www.googleapis.com/youtube/v3"
+        "url": "https://www.googleapis.com/youtube/v3/"
     },
     "Endpoints":{
         "locations":{
