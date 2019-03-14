@@ -12,6 +12,7 @@ class EndpointController extends Controller
     private $configObj;
     private $currentAction = null;
     private $currentEndpoint = null;
+    private $youtubeKey = null;
 
     /**
      * Create a new controller instance.
@@ -23,6 +24,7 @@ class EndpointController extends Controller
         $this->middleware('jwt.auth');
 
         if($request) $this->requestObj = $request;
+        if(env('YOUTUBE_KEY')) $this->youtubeKey = env('YOUTUBE_KEY');
 
         //Set configuration
         $this->setConfiguration();
@@ -87,6 +89,13 @@ class EndpointController extends Controller
      * All the actions will be validated and then will be executed
      */
     public function performAction($action = null){
+        //If key is not set API can't be used
+        if(!$this->youtubeKey){
+            return response()->json([
+                'error' => 'Key cannot be empty'
+            ], 503);
+        }
+
         //Check if current action is allowed or not
         if(!$this->checkAction($action)){
             return response()->json([
@@ -110,7 +119,7 @@ class EndpointController extends Controller
 
             // Send a request
             $response = $client->request('GET', $this->currentEndpoint, [
-                'query' => ['key' => env('YOUTUBE_KEY'), 'part' => 'snippet,contentDetails'],
+                'query' => ['key' => $this->youtubeKey, 'part' => 'snippet,contentDetails'],
                 'headers' => ['Referer' => env('APP_URL'), 'Accept'     => 'application/json']
             ]);
         }catch(ClientException $e){
