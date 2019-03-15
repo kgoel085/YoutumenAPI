@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use App\Permission;
+use Illuminate\Support\Facades\Gate;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -25,5 +27,13 @@ class AppServiceProvider extends ServiceProvider
         //     $router->get('my-route', 'MyVendor\MyPackage\MyController@action');
         //     $router->get('my-second-route', 'MyVendor\MyPackage\MyController@otherAction');
         // });
+
+        //Adding lumen can() mapping to check for whether user can do an action( have permission ) or not
+        // Example - $user->can('edit-settings') 
+        Permission::get()->map(function($permission){
+            Gate::define($permission->slug, function($user) use ($permission){
+                return $user->hasPermissionTo($permission);
+            });
+        });
     }
 }
