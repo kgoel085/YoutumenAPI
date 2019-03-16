@@ -1,0 +1,42 @@
+{
+    "Roles":[
+        {
+            "slug": "super-admin",
+            "name": "Super Administrator",
+            "permissions": ["create", "update", "delete", "edit", "read"]
+        },
+        {
+            "slug": "admin",
+            "name": "Administrator",
+            "permissions": ["create", "update", "edit", "read"]
+        },
+        {
+            "slug": "user",
+            "name": "User",
+            "permissions": ["read"]
+        }
+    ],
+
+    "Permissions":[
+        {
+            "slug": "create",
+            "name": "Create"
+        },
+        {
+            "slug": "update",
+            "name": "Update"
+        },
+        {
+            "slug": "delete",
+            "name": "Delete"
+        },
+        {
+            "slug": "edit",
+            "name": "Edit"
+        },
+        {
+            "slug": "read",
+            "name": "Read"
+        }
+    ]
+}
