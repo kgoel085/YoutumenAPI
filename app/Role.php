@@ -16,7 +16,7 @@ class Role extends Model
      * @var array
      */
     protected $fillable = [
-        'name', 'email', 'password','token','account'
+        'name', 'slug'
     ];
 
     /**
@@ -29,6 +29,6 @@ class Role extends Model
     ];
 
     public function permissions() {
-        return $this->belongsToMany(App\Permission::class,'roles_permissions');
+        return $this->belongsToMany(Permission::class,'roles_permissions');
     }
 }
