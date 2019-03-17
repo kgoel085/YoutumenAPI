@@ -13,7 +13,7 @@ Class MakeRole extends Command{
      *
      * @var string
      */
-    protected $signature = "make:role {install?}";
+    protected $signature = "make:role {rolename?}";
 
     /**
      * The console command description.
@@ -27,6 +27,8 @@ Class MakeRole extends Command{
      *
      * @return void
      */
+
+
     public function __construct()
     {
         parent::__construct();
@@ -42,11 +44,22 @@ Class MakeRole extends Command{
         //Check initial setup
         $this->checkInitialInstall();
 
+        //Check if user has provided any role to create or not
+        $roleName = $this->argument('rolename');
+        
+        //Ask user to proivde one
+        if(!$roleName){
+            if($this->confirm('No role name provided. Do you want to continue ?')){
+                $roleName = $this->ask('Please provide role name to create');
+            }
+        }
+
+        //If user provided us something only then continue
+        if($roleName) $this->createRole($roleName);
     }
 
     protected function checkInitialInstall(){
-        $installArg = $fileContents = false;
-        if($this->argument('install')) $installArg = true;
+        $fileContents = false;
 
         //Check if any record exists in role / permission file or not 
         $roleCount = Role::all()->keyBy('slug');
@@ -59,6 +72,8 @@ Class MakeRole extends Command{
                 $this->info('Please run the initial setup by running ==> make:role install ');
             }
         }
+
+        $this->info('Initial check complete.');
     }
 
     protected function bootstrapRoles(){
@@ -148,6 +163,81 @@ Class MakeRole extends Command{
 
             $this->info('Initial bootstrap done.');
         //}
+    }
+
+    protected function createRole($userRole = null){
+        $chooseOpt = $roleSlug = null;
+        $roleExists = false;
+
+        //Check whether same role exists in DB or not
+        $userExist = Role::where('slug', $userRole)->orWhere('name', $userRole)->first();
+        if($userExist){
+            $this->info('Provided role already exist in the DB with slug/name : '.$userExist->slug.' / '.$userExist->name);
+            $roleExists = true;
+        }
+
+        if($roleExists) return false;
+
+        //Ask user for role slug
+        $roleSlug = $this->ask('Please enter a slug for '.$userRole.'. ');
+
+        //if($this->confirm('You have selected to create '.$userRole.' role. Continue ? ')){
+            $newRole = Role::create([
+                'slug' => $roleSlug,
+                'name' => $userRole
+            ]);
+
+            if($newRole){
+                $this->info('Role created: '.$newRole->name);
+
+                //Ask user whether they need to assign any permission to current role
+                if($this->confirm('Do you want to assign any permissions for role: '.$newRole->name)){
+                    $this->createPermission($newRole);
+                }
+            }
+        //}
+    }
+
+    public function createPermission($roleObj){
+        //Get all the permissions available in the DB
+        $permissionArr = Permission::all();
+        if($permissionArr->count() > 0){
+            $optArr = $tableArr = array();
+
+            foreach($permissionArr as $permissionOpt){
+                if($permissionOpt && $permissionOpt->id){
+                  $optArr[$permissionOpt->name] = $permissionOpt->id; 
+
+                  $tableArr[] = [$permissionOpt->id, $permissionOpt->name];
+                }
+            }
+
+            if(count($optArr) > 0){
+                $this->info('Following permissions are available.');
+                $this->table(['ID', 'Name'], $tableArr);
+
+                $chooseOpt = $this->ask('Please input the ID\'s with "|" seperator.');
+                if(empty($chooseOpt) == false){
+                    $permissionIds = array_unique(explode('|', $chooseOpt));
+                    
+                    if(count($permissionIds) > 0){
+                        foreach($permissionIds as $permissionId){
+                            $arrayKey = array_search($permissionId, $optArr);
+                            $this->info('Adding permission "'.$arrayKey.'": ');
+
+                            $permissionObj = null;
+                            $permissionObj = Permission::where('id', $permissionId)->first();
+
+                            if($permissionObj){
+                                $roleObj->permissions()->attach($permissionObj);
+                            }
+                        }
+                    }
+                }
+
+                $this->info('Permissions added successfully.');
+            }
+        }
     }
 }
 
