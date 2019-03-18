@@ -53,6 +53,7 @@ class EndpointController extends Controller
 
     public function checkAction(&$action){
         $returnVal = false;
+        if($action == 'home') $action = 'trending';
 
         if($action || in_array($action, $this->configObj['AllowedEndpoints'])){
             $this->currentAction = trim($action);
@@ -66,20 +67,40 @@ class EndpointController extends Controller
     }
 
     public function checkParameters(){
-        $returnArr = array('Status' => true, 'msg' => array());
+        $returnArr = array('Status' => true, 'msg' => array(), 'params' => array());
 
         $receivedParams = $this->requestObj->all();
         $allowedParams = array_keys($this->configObj['EndpointConfig'][$this->currentAction]['params']);
 
         if(count($receivedParams) > 0){
-            foreach($receivedParams as $reqVars){
-                if(!in_array($reqVars, $allowedParams)) $returnArr['msg'][] = $reqVars;
+            foreach($receivedParams as $reqKeys => $reqVars){
+                //if current param is not in allowed variables
+                if(!in_array($reqKeys, $allowedParams)){
+                    $returnArr['msg'][] = $reqKeys;
+                }else{
+                    //Add the params in the array to send
+                    if(empty($reqVars) == false) $returnArr['params'][$reqKeys] = $reqVars;
+                }
             }
         }
 
         if(count($returnArr['msg']) > 0){
             $returnArr['Status'] = false;
             $returnArr['msg'] = implode(', ', array_unique($returnArr['msg']));
+            $returnArr['params'] = array();
+        }else{
+            $returnArr['Status'] = true;
+            
+            //dd($returnArr['params']);
+            if(array_key_exists('common', $this->configObj['EndpointConfig'][$this->currentAction])){
+                $commonVars = $this->configObj['EndpointConfig'][$this->currentAction]['common'];
+                foreach($commonVars as $commVariable){
+                    $arreyKeyExists = array_key_exists($commVariable, $returnArr['params']);
+                    if(!$arreyKeyExists){
+                        $returnArr['params'][$commVariable] = $this->configObj['EndpointConfig'][$this->currentAction]['params'][$commVariable];
+                    }
+                }
+            }
         }
 
         return $returnArr;
@@ -111,6 +132,10 @@ class EndpointController extends Controller
             ], 400);
         }
 
+        $queryParams = $validParams['params'];
+        if(!array_key_exists('key', $queryParams)) $queryParams['key'] = $this->youtubeKey;
+        if(!array_key_exists('part', $queryParams)) $queryParams['part'] = 'snippet';
+
         try{
             //Prepare cURL client with configuration
             $client = new Client([
@@ -119,9 +144,32 @@ class EndpointController extends Controller
 
             // Send a request
             $response = $client->request('GET', $this->currentEndpoint, [
-                'query' => ['key' => $this->youtubeKey, 'part' => 'snippet,contentDetails'],
+                'query' => $queryParams,
                 'headers' => ['Referer' => env('APP_URL'), 'Accept'     => 'application/json']
             ]);
+
+            $responseBody = json_decode($response->getBody()->getContents(), true);
+            
+            $excludeFields = $this->configObj['EndpointConfig']['excludeFields'];
+
+            foreach($excludeFields as $excludeKEys => &$excludeType){
+                if(is_array($excludeType)){
+                    foreach($responseBody['items'] as &$item){
+                        foreach($excludeType as $excludeItems){
+                            if($item[$excludeItems]) unset($item[$excludeItems]);
+                        }
+                    }
+                }else{
+                    if($responseBody[$excludeKEys]) unset($responseBody[$excludeKEys]);
+                }
+            }
+
+            if($responseBody){
+                return response()->json([
+                    'success' => $responseBody
+                ], 200);
+            }
+
         }catch(ClientException $e){
             $error = [
                 'status' => 400,
