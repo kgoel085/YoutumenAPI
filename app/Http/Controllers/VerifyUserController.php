@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\User;
 use App\UserVerify;
 
+use App\Role;
+use App\Permission;
+
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
 use App\Notifications\VerifyUserEmailNotification;
@@ -122,9 +125,18 @@ class VerifyUserController extends Controller
             ], 400);
         }
 
+        //Set role / permission
+        $role = Role::where('slug', 'user')->first();
+        $permission = permission::where('slug', 'read')->first();
+
+        $newUser->roles()->attach($role);
+        $newUser->permissions()->attach($permission);
+
         $newUser->notify(new NewUserAccountNotification($newUserAccount));
         $userVerify->email_verified = 1;
         $userVerify->save();
+
+        
 
         return response()->json([
             'success' => 'User verified successfully'
