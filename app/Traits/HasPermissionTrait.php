@@ -31,7 +31,7 @@
         }
 
         //Checks whether the provided permission [$permission] is assigned to the user or user role
-        protected function hasPermissionTo($permission) {
+        public function hasPermissionTo($permission) {
             return $this->hasPermissionThroughRole($permission) || $this->hasPermission($permission);
         }
         
