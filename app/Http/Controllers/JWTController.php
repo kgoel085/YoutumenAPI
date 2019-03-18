@@ -51,7 +51,7 @@ class JWTController extends Controller
             'iss' => env('APP_NAME'),
             'sub' => $user->id,
             'iat' => time(),
-            'exp' => time() + 10*60
+            'exp' => time() + env('JWT_EXPIRY', 10)*60
         ];
         return JWT::encode($payload, env('JWT_SECRET'));
     }
