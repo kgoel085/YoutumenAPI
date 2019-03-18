@@ -3,33 +3,96 @@
         "url": "https://www.googleapis.com/youtube/v3/"
     },
     "Endpoints":{
+        "excludeFields":{
+            "kind": null,
+            "etag": null,
+            "items": ["kind", "etag"]
+        },
         "locations":{
-            "params": {},
+            "params": {"part":"snippet"},
             "endpoint": "i18nRegions"
         },
-        "home":{
-            "params": {"chart": "mostpopular", "maxResults": 5, "fields": "nextPageToken,pageInfo,items(snippet/channelId)"},
-            "endpoint":"videos"
-        },
         "trending":{
-            "params": {"chart": "mostpopular", "maxResults": 10},
+            "params": {
+                "chart": "mostpopular",
+                "part":"snippet",
+                "maxResults": 15, 
+                "fields": "nextPageToken,pageInfo,items(snippet/channelId)"
+            },
+            "common": ["chart", "maxResults"],
             "endpoint":"videos"
         },
         "channel":{
-            "params": {"part": "snippet,contentDetails", "fields": "items(id,contentDetails,snippet(title, thumbnails, description))", "id": null},
-            "endpoint": "channels"
+            "params": {
+                "part": "snippet", 
+                "fields": "items(id,contentDetails,snippet(title, thumbnails, description))", 
+                "id": null,
+                "categoryId": null,
+                "forUsername": null,
+                "managedByMe": null,
+                "mine": null,
+                "mySubscribers": null,
+                "onBehalfOfContentOwner": null,
+                "maxResults": 10,
+                "pageToken": null
+            },
+            "endpoint": "channels",
+            "common":["part", "maxResults"]
         },
         "playlist":{
-            "params":{"part": "snippet,contentDetails", "maxResults": 8, "fields": "items(snippet(resourceId/videoId))", "playlistId": null},
+            "params":{
+                "part": "snippet", 
+                "maxResults": 8, 
+                "fields": "items(snippet(resourceId/videoId))", 
+                "playlistId": null,
+                "channelId": null,
+                "id": null,
+                "mine": null,
+                "onBehalfOfContentOwner": null,
+                "pageToken": null
+            },
+            "common":["part", "maxResults"],
+            "endpoint": "playlistItems"
+        },
+        "playlistItems":{
+            "params":{
+                "part": "snippet",
+                "id": null,
+                "playlistId": null,
+                "maxResults": 10,
+                "onBehalfOfContentOwner": null,
+                "pageToken": null,
+                "videoId": null
+            },
+            "common":[],
             "endpoint": "playlistItems"
         },
         "video":{
-            "params":{"part": "snippet,contentDetails", "id": null},
+            "params":{
+                "part": "snippet", 
+                "chart": "mostPopular", 
+                "id": null, 
+                "myRating": ["like", "dislike"],
+                "maxResults": 10,
+                "pageToken": null,
+                "regionCode": null,
+                "videoCategoryId": null,
+                "fields":null
+            },
+            "common":["part", "maxResults"],
             "endpoint":"videos"
         },
         "search":{
-            "endpoint":"search",
-            "params":{"part": "snippet", "maxResults": 15, "order": "relevance"}
+           "params":{
+                "part": "snippet", 
+                "maxResults": 15, 
+                "order": "relevance",
+                "q": null, 
+                "type":"video", 
+                "videoType":"any"
+            },
+            "common": ["part", "maxResults", "type", "videoType"],
+            "endpoint":"search"
         }
     }   
 }
