@@ -50,6 +50,13 @@ class JWTAuth
         }
 
         $user = User::find($credentials->sub);
+
+        //Check for user permission
+        if(!$user->can('read')){
+            return response()->json([
+                'error' => 'Unauthorized access'
+            ], 400);
+        }
         
         // Now let's put the user in the request class so that you can grab it from there
         $request->auth = $user;
