@@ -89,7 +89,10 @@
                 "order": "relevance",
                 "q": null, 
                 "type":"video", 
-                "videoType":"any"
+                "videoType":"any",
+                "publishedAfter":null,
+                "publishedBefore":null,
+                "videoDuration":null
             },
             "common": ["part", "maxResults", "type", "videoType"],
             "endpoint":"search"
