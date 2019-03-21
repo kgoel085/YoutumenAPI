@@ -106,6 +106,67 @@ class EndpointController extends Controller
         return $returnArr;
     }
 
+    //Validates the date in correct format or not
+    function validateDate($date){
+        if (preg_match('/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})Z$/', $date, $parts) == true) {
+            $time = gmmktime($parts[4], $parts[5], $parts[6], $parts[2], $parts[3], $parts[1]);
+
+            $input_time = strtotime($date);
+            if ($input_time === false) return false;
+
+            return $input_time == $time;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Perform validations on the parameters before sending them to the API endpoint
+     */
+    function validateParameters($paramArr = array()){
+        if(count($paramArr) == 0 || !is_array($paramArr)) return $paramArr;
+        $errorArr = array();
+
+        $currentAction = $this->currentAction;
+        $paramKeys = array_keys($paramArr);
+
+        //Create case for any endpoint validation you want
+        switch($currentAction){
+            // Search Endpoint
+            case 'search':
+                //Check for dates
+                if(in_array('publishedAfter', $paramKeys)){
+                    $validDate = $this->validateDate($paramArr['publishedAfter']);
+                    if(!$validDate) $errorArr[] = 'Invalid Date in publishedAfter';
+                }
+
+                if(in_array('publishedBefore', $paramKeys)){
+                    $validDate = $this->validateDate($paramArr['publishedBefore']);
+                    if(!$validDate) $errorArr[] = 'Invalid Date in publishedBefore';
+                }
+
+                //Check for search content type
+                if(in_array('videoType', $paramKeys) && in_array('type', $paramKeys)){
+                    $videoType = $type = "";
+                    if(array_key_exists('videoType', $paramArr)) $videoType = $paramArr['videoType'];
+                    if(array_key_exists('type', $paramArr)) $type = $paramArr['type'];
+
+                    $excludeArr = array('video', 'channel', 'playlist');
+                    if(in_array(strtolower($type), $excludeArr) && empty($videoType) == false){
+                        unset($paramArr['videoType']);
+                    }
+                }
+            break;
+
+            default:
+                //Check for maxResult value
+                if(in_array('maxResults', $paramKeys) && ($paramArr['maxResults'] > 50 || empty($paramArr['maxResults'])) ) $paramArr['maxResults'] = 10;
+            break;
+        }
+
+        return $paramArr;
+    }
+
     /**
      * All the actions will be validated and then will be executed
      */
@@ -133,6 +194,11 @@ class EndpointController extends Controller
         }
 
         $queryParams = $validParams['params'];
+         //Run any validations on the final api parameters array
+         $queryParams = $this->validateParameters($queryParams);
+
+         echo json_encode($queryParams);
+
         if(!array_key_exists('key', $queryParams)) $queryParams['key'] = $this->youtubeKey;
         if(!array_key_exists('part', $queryParams)) $queryParams['part'] = 'snippet';
 
