@@ -8,7 +8,7 @@ use GuzzleHttp\Exception\ClientException;
 use Mockery\Exception;
 use phpDocumentor\Reflection\Types\Boolean;
 
-class TestEndpointController extends Controller
+class EndPointController extends Controller
 {
     private $requestObj;
     private $configObj;
