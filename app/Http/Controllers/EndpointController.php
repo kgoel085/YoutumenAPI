@@ -5,14 +5,17 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
+use Mockery\Exception;
+use phpDocumentor\Reflection\Types\Boolean;
 
-class EndpointController extends Controller
+class TestEndpointController extends Controller
 {
     private $requestObj;
     private $configObj;
     private $currentAction = null;
     private $currentEndpoint = null;
     private $youtubeKey = null;
+    private $paramValidateArr = array();
 
     /**
      * Create a new controller instance.
@@ -44,9 +47,11 @@ class EndpointController extends Controller
 
             //Set endpoint related variables
             if(count($tmpContentArr['Endpoints'] > 0)){
+
                 //All availabele endpoints
                 $this->configObj['AllowedEndpoints'] = array_keys($tmpContentArr['Endpoints']);
                 $this->configObj['EndpointConfig'] = $tmpContentArr['Endpoints'];
+                $this->configObj['CommonFilters'] = $tmpContentArr['CommonParams'];
             }
         }
     }
@@ -67,43 +72,241 @@ class EndpointController extends Controller
     }
 
     public function checkParameters(){
-        $returnArr = array('Status' => true, 'msg' => array(), 'params' => array());
+        $returnArr = array('valid' => true, 'msg' => null);
+        $requestedVars = $allowedVars = array();
 
-        $receivedParams = $this->requestObj->all();
-        $allowedParams = array_keys($this->configObj['EndpointConfig'][$this->currentAction]['params']);
+        //Requested parameters
+        $requestedVars = array_keys($this->requestObj->all());
 
-        if(count($receivedParams) > 0){
-            foreach($receivedParams as $reqKeys => $reqVars){
-                //if current param is not in allowed variables
-                if(!in_array($reqKeys, $allowedParams)){
-                    $returnArr['msg'][] = $reqKeys;
-                }else{
-                    //Add the params in the array to send
-                    if(empty($reqVars) == false) $returnArr['params'][$reqKeys] = $reqVars;
-                }
-            }
-        }
+        //Master filter array
+        $commonFilters = $this->configObj['CommonFilters'];
+        
+        //Action specific filter array
+        $currentParams = $this->configObj['EndpointConfig'][$this->currentAction]['params'];
 
-        if(count($returnArr['msg']) > 0){
-            $returnArr['Status'] = false;
-            $returnArr['msg'] = implode(', ', array_unique($returnArr['msg']));
-            $returnArr['params'] = array();
-        }else{
-            $returnArr['Status'] = true;
-            
-            //dd($returnArr['params']);
-            if(array_key_exists('common', $this->configObj['EndpointConfig'][$this->currentAction])){
-                $commonVars = $this->configObj['EndpointConfig'][$this->currentAction]['common'];
-                foreach($commonVars as $commVariable){
-                    $arreyKeyExists = array_key_exists($commVariable, $returnArr['params']);
-                    if(!$arreyKeyExists){
-                        $returnArr['params'][$commVariable] = $this->configObj['EndpointConfig'][$this->currentAction]['params'][$commVariable];
+        if(is_array($currentParams) && count($currentParams) > 0){
+            foreach($currentParams as $paramType => $paramFilters){
+
+                //Current type of param : required, filters, optional
+                $currentFilter = &$commonFilters[$paramType];
+
+                if($currentFilter){
+                    if(is_array($paramFilters) && count($paramFilters) > 0){
+                        $tmpArr = array();
+                        foreach($paramFilters as $paramKey => $paramVal){
+
+                            //User has proived a param to overwrite
+                            if(is_array($paramVal)){
+                                $getKeys = array_keys($paramVal);
+                                if(count($getKeys) > 0 && is_array($getKeys)){
+
+                                    //Overwrite the master filter array with action specific values
+                                    foreach($getKeys as $findKey){
+                                        if($currentFilter[$paramKey][$findKey]){
+
+                                            $currentFilter[$paramKey][$findKey] = $paramVal[$findKey];
+
+                                            //Add it to allowed variable
+                                            if(!in_array($paramKey, $tmpArr)) $tmpArr[] = $paramKey;
+                                        }
+                                    }
+                                }
+                            }else{
+                                //Action has requested specific filters to be validated not all filters in master
+                                if(!in_array($paramVal, $tmpArr)) $tmpArr[] = $paramVal;
+                            }
+                        }
+
+                        if(count($tmpArr) > 0){
+                            //Remove the filters that are not required by the action to be validated
+                            foreach($currentFilter as $currentKey => $currentVal){
+                                if(!in_array($currentKey, $tmpArr)){
+                                    unset($currentFilter[$currentKey]);
+                                }else{
+                                    //Store all the allowed params in one array
+                                    if(!in_array($currentKey, $allowedVars)) $allowedVars[] = $currentKey; 
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
 
+        //Check if any unallowed parameters is sent in request
+        if(count($allowedVars) > 0){
+            $diffParams = array_diff($requestedVars, $allowedVars);
+            if($diffParams){
+                $returnArr['valid'] = false;
+                $returnArr['msg'] = 'Following parameters are not allowed. Invalid parameters: '.implode(',', array_unique($diffParams));
+            }
+        }
+
+        //Check if required parameters are avaialbel or not
+        if($commonFilters['required'] && $returnArr['valid']){
+            $requiredExists = true;
+
+            $requiredVars = array_keys($commonFilters['required']);
+            if(is_array($requiredVars) && count($requiredVars) > 0){
+                foreach($requiredVars as $reqVar){
+                   if(!in_array($reqVar, $requestedVars))  $requiredExists = false;
+
+                   if(!$requiredExists){
+                        $possibleVals = ($commonFilters['required'][$reqVar]['possibleVals']) ? implode(',', $commonFilters['required'][$reqVar]['possibleVals']) : null;
+
+                        $returnArr['valid'] = false;
+                        $returnArr['msg'] = $reqVar.' is required.';
+                        if($possibleVals) $returnArr['msg'] = $returnArr['msg'].' Possible values are: '.$possibleVals;
+
+                        break;
+                   }
+                }
+            }
+        }
+
+        //If request is valid, set the global class validate arr to be used in validateParameters()
+        if($returnArr['valid']) $this->paramValidateArr = $commonFilters;
+
         return $returnArr;
+    }
+
+    //Perform required valdiations before specific action is performed
+    public function validateParameters(){
+        $returnArr = array();
+        $validateArr = $this->paramValidateArr;
+        $reqVars = $this->requestObj->all();
+
+        $workflowArr = $validateArr['workflow'];
+
+        if($workflowArr){
+            try {
+                foreach($workflowArr as $paramType => $paramAction){
+                    $currentFilter = $validateArr[$paramType];
+                    if($paramAction) $paramAction = array_values(array_filter($paramAction));
+
+                    if($paramType == 'filters'){
+                        //Check only one parameter is set out of a given parameters
+                        $allowedParams = array_keys($currentFilter);
+                        $requestedParams = array_keys($reqVars);
+
+                        $tmpArr = array();
+                        foreach($requestedParams as $reqParam){
+                            if(count($tmpArr) > 1) break;
+                            if(in_array($reqParam, $allowedParams)){
+                                $tmpArr[] = $reqParam;
+                            }
+                        }
+
+                        if(count($tmpArr) > 1){
+                            throw new Exception("One or more filter is set. Please set only one filter from these: ".implode(',', $allowedParams));
+                        }
+                    }
+    
+                    // Action specific validations
+                    $validParam = true;
+                    foreach($currentFilter as $filterKey => $filterVals){
+    
+                        //Loop thorugh them according to the workflow
+                        foreach($paramAction as $action){
+                            $currentVal = (array_key_exists($filterKey, $reqVars)) ? $reqVars[$filterKey] : false;
+                            if(!array_key_exists($action, $currentFilter[$filterKey]) || !$currentVal) continue;
+
+                            switch($action){
+
+                                //Check variable value type
+                                case 'type':
+                                    $currentActionVal = $currentFilter[$filterKey][$action];
+                                    $currentValType = gettype($currentVal);
+                                    switch($currentActionVal){
+                                        case 'string':
+                                            if($currentValType !== $currentActionVal){
+                                                throw new Exception($filterKey.' should be a '.$currentActionVal.'. '.$currentValType.' provided');
+                                            }
+                                        break;
+
+                                        case 'integer':
+                                            $currentValType = (int) $currentVal;
+                                            $range = $currentFilter[$filterKey]['range'];
+
+                                            if(empty($currentValType) == false && $currentValType >= $range['min'] && $currentValType <= $range['max']){}
+                                            else{
+                                                throw new Exception($filterKey.' should an integer between '.$range['min'].' & '.$range['max']);
+                                            }
+                                        break;
+
+                                        case 'boolean':
+                                            $currentValType = (Boolean) $currentVal;
+                                            if($currentValType === $currentActionVal){
+                                                throw new Exception($filterKey.' should be a '.$currentActionVal.'. '.$currentValType.' provided');
+                                            }
+                                        break;
+                                    }
+                                break;
+
+                                //Check if only possible values are provided
+                                case 'possibleVals':
+                                    $checkValuesArr = $currentFilter[$filterKey][$action];
+                                    if(!$checkValuesArr) continue;
+
+                                    $searchedKey = array_search(trim($currentVal), $checkValuesArr);
+
+                                    if(!$checkValuesArr[$searchedKey]){
+                                        throw new Exception($currentVal.' is an invalid value for '.$filterKey.' parameter. Possible valid values are: '.implode(',', $checkValuesArr));
+                                    }
+                                break;
+
+                                //Check if only allowed parameters are set
+                                case 'allowed':
+                                    $checkValuesArr = $currentFilter[$filterKey][$action];
+                                    $reqSearch = array_keys($reqVars);
+
+                                    //Unset the requested filter var
+                                    if(array_search($filterKey, $reqSearch)) unset($reqSearch[array_search($filterKey, $reqSearch)]);
+
+                                    $diffParams = array_diff($reqSearch, $checkValuesArr);
+                                    if($diffParams){
+                                        throw new Exception(implode(',', $diffParams).' are not acceptable with '.$filterKey);
+                                    }
+                                break;
+
+                                //Check if all the required variables are set
+                                case 'required':
+                                    $checkValuesArr = $currentFilter[$filterKey][$action];
+
+                                    $tmpArr = array();
+                                    foreach($checkValuesArr as $checkKey => $checkVal){
+                                        //If value is null, that means key only needs to be set in request
+                                        if($checkVal === null){
+                                            if(array_key_exists($checkKey, $reqVars)){
+
+                                            }else{
+                                                $tmpArr[] = $checkKey.' is required';
+                                            }
+                                        }else{
+                                            //If value is there than key and value should match
+                                            if($reqVars[$checkKey] && $reqVars[$checkKey] == $checkVal){
+
+                                            }else{
+                                                $tmpArr[] = $checkKey.' should be set to '.$checkVal;
+                                            }
+                                        }
+                                    }
+
+                                    if(count($tmpArr) > 0){
+                                        throw new Exception($filterKey.' required parameters are missing. '.implode(',', $tmpArr));
+                                    }
+                                break;
+                            }
+                        }
+                    }
+                }
+            } catch (Exception $th) {
+                dd($th->getMessage());
+            }
+            
+        }
+
+        dd($validateArr);
     }
 
     //Validates the date in correct format or not
@@ -118,53 +321,6 @@ class EndpointController extends Controller
         } else {
             return false;
         }
-    }
-
-    /**
-     * Perform validations on the parameters before sending them to the API endpoint
-     */
-    function validateParameters($paramArr = array()){
-        if(count($paramArr) == 0 || !is_array($paramArr)) return $paramArr;
-        $errorArr = array();
-
-        $currentAction = $this->currentAction;
-        $paramKeys = array_keys($paramArr);
-
-        //Create case for any endpoint validation you want
-        switch($currentAction){
-            // Search Endpoint
-            case 'search':
-                //Check for dates
-                if(in_array('publishedAfter', $paramKeys)){
-                    $validDate = $this->validateDate($paramArr['publishedAfter']);
-                    if(!$validDate) $errorArr[] = 'Invalid Date in publishedAfter';
-                }
-
-                if(in_array('publishedBefore', $paramKeys)){
-                    $validDate = $this->validateDate($paramArr['publishedBefore']);
-                    if(!$validDate) $errorArr[] = 'Invalid Date in publishedBefore';
-                }
-
-                //Check for search content type
-                if(in_array('videoType', $paramKeys) && in_array('type', $paramKeys)){
-                    $videoType = $type = "";
-                    if(array_key_exists('videoType', $paramArr)) $videoType = $paramArr['videoType'];
-                    if(array_key_exists('type', $paramArr)) $type = $paramArr['type'];
-
-                    $excludeArr = array('video', 'channel', 'playlist');
-                    if(in_array(strtolower($type), $excludeArr) && empty($videoType) == false){
-                        unset($paramArr['videoType']);
-                    }
-                }
-            break;
-
-            default:
-                //Check for maxResult value
-                if(in_array('maxResults', $paramKeys) && ($paramArr['maxResults'] > 50 || empty($paramArr['maxResults'])) ) $paramArr['maxResults'] = 10;
-            break;
-        }
-
-        return $paramArr;
     }
 
     /**
@@ -187,20 +343,16 @@ class EndpointController extends Controller
 
         //Check if request parameters are also allowed or not
         $validParams = $this->checkParameters();
-        if(!$validParams['Status'] || $validParams['msg']){
+
+        if(!$validParams['valid'] || $validParams['msg']){
             return response()->json([
-                'error' => 'Following parameters are not allowed. Invalid parameters: '.$validParams['msg']
+                'error' => $validParams['msg']
             ], 400);
         }
 
-        $queryParams = $validParams['params'];
-         //Run any validations on the final api parameters array
-         $queryParams = $this->validateParameters($queryParams);
-
-         echo json_encode($queryParams);
-
-        if(!array_key_exists('key', $queryParams)) $queryParams['key'] = $this->youtubeKey;
-        if(!array_key_exists('part', $queryParams)) $queryParams['part'] = 'snippet';
+        //Perform validation on the requested params before procedding
+        $queryParams = $this->validateParameters();
+        dd($queryParams);
 
         try{
             //Prepare cURL client with configuration

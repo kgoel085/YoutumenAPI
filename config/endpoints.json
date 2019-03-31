@@ -2,100 +2,506 @@
     "Global":{
         "url": "https://www.googleapis.com/youtube/v3/"
     },
-    "Endpoints":{
-        "excludeFields":{
-            "kind": null,
-            "etag": null,
-            "items": ["kind", "etag"]
+
+    "CommonParams__comments": "This object consists of all the possible required, filters(expectOnlyOne from a combination), optional parameters supported by YT API. To use the below params, if  user wants to use below params as it is without overwriting the defaultvalues pass them as array else just defined the params as object with the key value to modify",
+    "CommonParams":{
+        "workflow__comments": "This object decides the flow in which parameters will be validated.",
+        "workflow": {
+            "required":["type", "possibleVals"],
+            "filters": ["type", "possibleVals", "requiredAuth", "required", "allowed", "notRequired"],
+            "optional": ["type", "possibleVals", "requiredAuth", "required", "allowed", "notRequired"]
         },
-        "locations":{
-            "params": {"part":"snippet"},
-            "endpoint": "i18nRegions"
+
+        "required__comments": "This object contains all the possible parameters which are required for any of the defined endpoints",
+        "required":{
+            "part":{
+                "default": "snippet", 
+                "type": "string", 
+                "possibleVals":[
+                    "auditDetails", "brandingSettings", "contentDetails", "contentOwnerDetails", "id", "localizations", "snippet", "statistics", "status", "topicDetails", "targeting", "fileDetails", "liveStreamingDetails", "processingDetails", "recordingDetails", "suggestions", "topicDetails"
+                ]
+            }
         },
-        "trending":{
-            "params": {
-                "chart": "mostpopular",
-                "part":"snippet",
-                "maxResults": 15, 
-                "fields": "nextPageToken,pageInfo,items(snippet/channelId)"
+
+        "filters__comments": "This object contains all the possible parameters out of which only one parameter is allowed for particular endpoint",
+        "filters":{
+            "categoryId":{
+                "type": "string"
             },
-            "common": ["chart", "maxResults"],
-            "endpoint":"videos"
+            "forUsername":{
+                "type": "string" 
+            },
+            "id":{
+                "type": "string" 
+            },
+            "channelId":{
+                "type": "string"
+            },
+            "playlistId":{
+                "type": "string"
+            },
+            "chart":{
+                "type":"string",
+                "possibleVals":["mostPopular"]
+            },
+            "myRating":{
+                "type":"string",
+                "possibleVals":["dislike", "like"]
+            },
+            "managedByMe":{
+                "type": "boolean",
+                "requiredAuth": true 
+            },
+            "mine":{
+                "type": "boolean",
+                "requiredAuth": true
+            },
+            "mySubscribers":{
+                "type": "boolean",
+                "requiredAuth": true 
+            },
+            "forContentOwner":{
+                "type": "boolean",
+                "requiredAuth": true,
+                "required":{
+                    "onBehalfOfContentOwner": null,
+                    "type": "video"
+                },
+                "notRequired":[
+                    "videoDefinition",
+                    "videoDimension",
+                    "videoDuration",
+                    "videoLicense",
+                    "videoEmbeddable",
+                    "videoSyndicated",
+                    "videoType"
+                ]
+            },
+            "forDeveloper":{
+                "type": "boolean",
+                "requiredAuth": true
+            },
+            "forMine":{
+                "type": "boolean",
+                "required":{
+                    "type": "video"
+                },
+                "notRequired":[
+                    "videoDefinition",
+                    "videoDimension",
+                    "videoDuration",
+                    "videoLicense",
+                    "videoEmbeddable",
+                    "videoSyndicated",
+                    "videoType"
+                ]
+            },
+            "relatedToVideoId":{
+                "required":{
+                    "type": "video"
+                },
+                "allowed":[
+                    "part",
+                    "maxResults",
+                    "pageToken",
+                    "regionCode",
+                    "relevance",
+                    "relevanceLanguage",
+                    "safeSearch",
+                    "type",
+                    "fields"
+                ]
+            }
+        },
+
+        "optional__comments": "This object contains all the possible parameters that are optional or not mandatory but supported by API",
+        "optional":{
+            "hl":{
+                "type": "string"
+            },
+            "maxResults":{
+                "type": "integer",
+                "range": {"min": 0, "max": 50},
+                "default": 5
+            },
+            "pageToken":{
+                "type": "string"
+            },
+            "videoId":{
+                "type": "string"
+            },
+            "channelId":{
+                "type": "string"
+            },
+            "channelType":{
+                "type": "string",
+                "possibleVals":[
+                    "any", 
+                    "show"
+                ]
+            },
+            "eventType":{
+                "type": "string",
+                "required":{
+                    "type": "video"
+                },
+                "possibleVals":[
+                    "completed", 
+                    "live",
+                    "upcoming "
+                ]
+            },
+            "location":{
+                "type": "string",
+                "required":{
+                    "locationRadius": null
+                }
+            },
+            "order":{
+                "type": "string",
+                "possibleVals":[
+                    "date",
+                    "rating",
+                    "relevance",
+                    "title",
+                    "videoCount",
+                    "viewCount"
+                ]
+            },
+            "locationRadius":{
+                "type": "string"
+            },
+            "maxHeight":{
+                "type": "integer",
+                "range": {"min": 72, "max": 8192}
+            },
+            "maxWidth":{
+                "type": "integer",
+                "range": {"min": 72, "max": 8192}
+            },
+            "regionCode":{
+                "type": "string"
+            },
+            "videoCategoryId":{
+                "type": "string",
+                "default": 0
+            },
+            "publishedAfter":{
+                "type":"datetime"
+            },
+            "publishedBefore":{
+                "type":"datetime"
+            },
+            "q":{
+                "type":"string"
+            },
+            "relevanceLanguage":{
+                "type":"string"
+            },
+            "safeSearch":{
+                "type":"string",
+                "possibleVals":[
+                    "moderate",
+                    "none",
+                    "strict"
+                ]
+            },
+            "type":{
+                "type":"string",
+                "possibleVals":[
+                    "channel",
+                    "playlist",
+                    "video"
+                ]
+            },
+            "videoCaption":{
+                "type":"string",
+                "possibleVals":[
+                    "any",
+                    "closedCaption",
+                    "none"
+                ]
+            },
+            "videoDefinition":{
+                "type":"string",
+                "possibleVals":[
+                    "any",
+                    "high",
+                    "standard"
+                ],
+                "required":{
+                    "type": "video"
+                }
+            },
+            "videoDimension":{
+                "type":"string",
+                "possibleVals":[
+                    "2d",
+                    "3d",
+                    "any"
+                ],
+                "required":{
+                    "type": "video"
+                }
+            },
+            "videoDuration":{
+                "type":"string",
+                "possibleVals":[
+                    "any",
+                    "long",
+                    "medium",
+                    "short"
+                ],
+                "required":{
+                    "type": "video"
+                }
+            },
+            "videoEmbeddable":{
+                "type":"string",
+                "possibleVals":[
+                    "any",
+                    "true"
+                ],
+                "required":{
+                    "type": "video"
+                }
+            },
+            "videoLicense":{
+                "type":"string",
+                "possibleVals":[
+                    "any",
+                    "creativeCommon",
+                    "youtube"
+                ],
+                "required":{
+                    "type": "video"
+                }
+            },
+            "videoSyndicated":{
+                "type":"string",
+                "possibleVals":[
+                    "any",
+                    "true"
+                ],
+                "required":{
+                    "type": "video"
+                }
+            },
+            "videoType":{
+                "type":"string",
+                "possibleVals":[
+                    "any",
+                    "episode",
+                    "movie"
+                ],
+                "required":{
+                    "type": "video"
+                }
+            },
+            "onBehalfOfContentOwnerChannel":{
+                "type":"string",
+                "requiredAuth": true
+            },
+            "onBehalfOfContentOwner":{
+                "type": "string",
+                "requiredAuth": true
+            }
+        }
+    },
+    "Endpoints":{
+        "locations":{
+            "endpoint": "i18nRegions",
+            "params":{
+                "required":[
+                    "part"
+                ],
+                "filters": null,
+                "optional": null
+            }
         },
         "channel":{
-            "params": {
-                "part": "snippet", 
-                "fields": "items(id,contentDetails,snippet(title, thumbnails, description))", 
-                "id": null,
-                "categoryId": null,
-                "forUsername": null,
-                "managedByMe": null,
-                "mine": null,
-                "mySubscribers": null,
-                "onBehalfOfContentOwner": null,
-                "maxResults": 10,
-                "pageToken": null
-            },
             "endpoint": "channels",
-            "common":["part", "maxResults"]
+            "params":{
+
+                "required":{
+                    "part": {
+                        "possibleVals": [
+                            "auditDetails", "brandingSettings", "contentDetails", "contentOwnerDetails", "id", "localizations", "snippet", "statistics", "status", "topicDetails" 
+                        ]
+                    }
+                },
+
+                "filters":[
+                    "categoryId", 
+                    "forUsername", 
+                    "id", 
+                    "managedByMe", 
+                    "mine", 
+                    "mySubscribers"
+                ],
+
+                "optional":[
+                    "hl",
+                    "maxResults",
+                    "onBehalfOfContentOwner",
+                    "pageToken"
+                ]
+                
+            }
         },
+        "channelSection":{
+            "endpoint": "channelSections",
+            "params":{
+                "required":{
+                    "part": {
+                        "possibleVals": [
+                            "contentDetails", "id", "localizations", "snippet", "targeting"
+                        ]
+                    }
+                },
+
+                "filters":[
+                    "channelId",
+                    "id",
+                    "mine"
+                ],
+
+                "optional":[
+                    "hl",
+                    "onBehalfOfContentOwner"
+                ]
+            }
+        },
+
         "playlist":{
-            "params":{
-                "part": "snippet", 
-                "maxResults": 8, 
-                "fields": "items(snippet(resourceId/videoId))", 
-                "playlistId": null,
-                "channelId": null,
-                "id": null,
-                "mine": null,
-                "onBehalfOfContentOwner": null,
-                "pageToken": null
-            },
-            "common":["part", "maxResults"],
-            "endpoint": "playlistItems"
+            "endpoint": "playlists",
+            "params": {
+                "required":{
+                    "part":{
+                        "possibleVals": [
+                            "contentDetails", "id", "localizations", "player", "snippet", "status"
+                        ]
+                    }
+                },
+
+                "filters":[
+                    "channelId",
+                    "id",
+                    "mine"
+                ],
+
+                "optional":[
+                    "hl",
+                    "maxResults",
+                    "onBehalfOfContentOwner",
+                    "onBehalfOfContentOwnerChannel",
+                    "pageToken"
+                ]
+            }
         },
+
         "playlistItems":{
+            "endpoint": "playlistItems",
             "params":{
-                "part": "snippet",
-                "id": null,
-                "playlistId": null,
-                "maxResults": 10,
-                "onBehalfOfContentOwner": null,
-                "pageToken": null,
-                "videoId": null
-            },
-            "common":[],
-            "endpoint": "playlistItems"
+                "required":{
+                    "part":{
+                        "possibleVals": [
+                            "contentDetails", "id", "snippet", "status"
+                        ]
+                    }
+                },
+
+                "filters":[
+                    "id",
+                    "playlistId"
+                ],
+
+                "optional":[
+                    "maxResults",
+                    "onBehalfOfContentOwner",
+                    "pageToken",
+                    "videoId"
+                ]
+            }
         },
+
         "video":{
+            "endpoint": "videos",
             "params":{
-                "part": "snippet", 
-                "chart": "mostPopular", 
-                "id": null, 
-                "myRating": ["like", "dislike"],
-                "maxResults": 10,
-                "pageToken": null,
-                "regionCode": null,
-                "videoCategoryId": null,
-                "fields":null
-            },
-            "common":["part", "maxResults"],
-            "endpoint":"videos"
+                "required":{
+                    "part":{
+                        "possibleVals": [
+                            "contentDetails", "fileDetails", "id", "liveStreamingDetails","localizations", "player", "snippet", "status", "processingDetails", "recordingDetails", "statistics", "suggestions", "topicDetails"
+                        ]
+                    }
+                },
+
+                "filters":[
+                    "chart",
+                    "id",
+                    "myRating"
+                ],
+
+                "optional":[
+                    "hl",
+                    "maxHeight",
+                    "maxWidth",
+                    "maxResults",
+                    "onBehalfOfContentOwner",
+                    "pageToken",
+                    "regionCode",
+                    "videoCategoryId"
+                ]
+            }
         },
+
         "search":{
-           "params":{
-                "part": "snippet", 
-                "maxResults": 15, 
-                "order": "relevance",
-                "q": null, 
-                "type":"video", 
-                "videoType":"any",
-                "publishedAfter":null,
-                "publishedBefore":null,
-                "videoDuration":null
-            },
-            "common": ["part", "maxResults", "type", "videoType"],
-            "endpoint":"search"
+            "endpoint": "search",
+            "params":{
+                "required":{
+                    "part":{
+                        "possibleVals":[
+                            "snippet"
+                        ]
+                    }
+                },
+
+                "filters":[
+                    "forContentOwner",
+                    "forDeveloper",
+                    "forMine",
+                    "relatedToVideoId"
+                ],
+
+                "optional":[
+                    "channelId",
+                    "channelType",
+                    "eventType",
+                    "location",
+                    "locationRadius",
+                    "maxResults",
+                    "onBehalfOfContentOwner",
+                    "order",
+                    "pageToken",
+                    "publishedAfter",
+                    "publishedBefore",
+                    "q",
+                    "regionCode",
+                    "relevanceLanguage",
+                    "safeSearch",
+                    "topicId",
+                    "type",
+                    "videoCaption",
+                    "videoCategoryId",
+                    "videoDefinition",
+                    "videoDimension",
+                    "videoDuration",
+                    "videoEmbeddable",
+                    "videoLicense",
+                    "videoSyndicated",
+                    "videoType"
+                ]
+            }
         }
     }   
 }
