@@ -296,6 +296,28 @@ class EndPointController extends Controller
                                         throw new Exception($filterKey.' required parameters are missing. '.implode(',', $tmpArr));
                                     }
                                 break;
+
+                                //Check if not required params are set or not
+                                case 'notRequired':
+                                    $reqSearch = "";
+                                    $checkValuesArr = $currentFilter[$filterKey][$action];
+                                    $reqSearch = array_keys($reqVars);
+
+                                    //Unset the requested filter var
+                                    if(array_search($filterKey, $reqSearch)) unset($reqSearch[array_search($filterKey, $reqSearch)]);
+
+                                    $tmpArr = array();
+
+                                    foreach($checkValuesArr as $checkKey){
+                                        if(array_search($checkKey, $reqSearch)){
+                                            $tmpArr[] = $checkKey;
+                                        }
+                                    }
+
+                                    if(count($tmpArr) > 0){
+                                        throw new Exception(implode(',', $tmpArr).' are not required with '.$filterKey);
+                                    }
+                                break;
                             }
                         }
                     }
