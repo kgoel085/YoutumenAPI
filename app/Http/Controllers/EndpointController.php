@@ -33,6 +33,7 @@ class EndPointController extends Controller
         $this->setConfiguration();
     }
 
+    // Set all the required parameters for the current request
     public function setConfiguration(){
         $configFile = str_replace('\\', '/', base_path()).'/config/endpoints.json';
 
@@ -56,6 +57,7 @@ class EndPointController extends Controller
         }
     }
 
+    // Set if current action is valid or not
     public function checkAction(&$action){
         $returnVal = false;
         if($action == 'home') $action = 'trending';
@@ -71,6 +73,7 @@ class EndPointController extends Controller
         return $returnVal;
     }
 
+    // Set validation base for the current request, and check if any unwanted parameter is set 
     public function checkParameters(){
         $returnArr = array('valid' => true, 'msg' => null);
         $requestedVars = $allowedVars = array();
@@ -179,9 +182,9 @@ class EndPointController extends Controller
         $reqVars = $this->requestObj->all();
 
         $workflowArr = $validateArr['workflow'];
-
         if($workflowArr){
             try {
+                //Perform validation according to the workflow
                 foreach($workflowArr as $paramType => $paramAction){
                     $currentFilter = $validateArr[$paramType];
                     if($paramAction) $paramAction = array_values(array_filter($paramAction));
