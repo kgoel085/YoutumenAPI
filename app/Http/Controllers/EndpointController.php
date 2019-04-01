@@ -245,6 +245,12 @@ class EndPointController extends Controller
                                                 throw new Exception($filterKey.' should be a '.$currentActionVal.'. '.$currentValType.' provided');
                                             }
                                         break;
+
+                                        case 'datetime':
+                                            if(!$this->validateDate($currentVal)){
+                                                throw new Exception($filterKey.' have invalid format/value');
+                                            }
+                                        break;
                                     }
                                 break;
 
