@@ -419,7 +419,7 @@ class EndPointController extends Controller
         }
 
         //Set developer key
-        if(!array_key_exists('key', $sendParams)) $sendParams['key'] = $this->youtubeKey;
+        if(!array_key_exists('key', (array) $sendParams)) $sendParams['key'] = $this->youtubeKey;
 
         try{
             //Prepare cURL client with configuration
