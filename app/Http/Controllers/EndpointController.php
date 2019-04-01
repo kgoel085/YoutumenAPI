@@ -172,7 +172,9 @@ class EndPointController extends Controller
 
     //Perform required valdiations before specific action is performed
     public function validateParameters(){
-        $returnArr = array();
+        $returnArr = array('valid' => true, 'msg' => null, 'params' => null);
+        $msgString = "";
+
         $validateArr = $this->paramValidateArr;
         $reqVars = $this->requestObj->all();
 
@@ -248,10 +250,23 @@ class EndPointController extends Controller
                                     $checkValuesArr = $currentFilter[$filterKey][$action];
                                     if(!$checkValuesArr) continue;
 
-                                    $searchedKey = array_search(trim($currentVal), $checkValuesArr);
+                                    if(stristr($currentVal, ',')) $currentVal = array_values(array_filter(explode(',', $currentVal)));
 
-                                    if(!$checkValuesArr[$searchedKey]){
-                                        throw new Exception($currentVal.' is an invalid value for '.$filterKey.' parameter. Possible valid values are: '.implode(',', $checkValuesArr));
+                                    if(is_array($currentVal)){
+                                        foreach($currentVal as $currentKey){
+                                            $searchedKey11 = "";
+                                            $searchedKey11 = array_search($currentKey, $checkValuesArr);
+                                            if($searchedKey11 === false || !$checkValuesArr[$searchedKey11]){
+                                                throw new Exception($currentKey.' is an invalid value for '.$filterKey.' parameter. Possible valid values are: '.implode(',', $checkValuesArr));
+                                                break;
+                                            }
+                                        }
+                                    }else{
+                                        $searchedKey = array_search(trim($currentVal), $checkValuesArr);
+
+                                        if(!$checkValuesArr[$searchedKey]){
+                                            throw new Exception($currentVal.' is an invalid value for '.$filterKey.' parameter. Possible valid values are: '.implode(',', $checkValuesArr));
+                                        }
                                     }
                                 break;
 
@@ -297,6 +312,16 @@ class EndPointController extends Controller
                                     }
                                 break;
 
+                                //Check if google auth is required or not
+                                case 'requiredAuth':
+                                    $checkValuesArr = $currentFilter[$filterKey][$action];
+                                    if($checkValuesArr){
+                                        if(!$this->requestObj->gToken){
+                                            throw new Exception($filterKey.' requires authorization tokken.');
+                                        }
+                                    }
+                                break;
+
                                 //Check if not required params are set or not
                                 case 'notRequired':
                                     $reqSearch = "";
@@ -323,12 +348,14 @@ class EndPointController extends Controller
                     }
                 }
             } catch (Exception $th) {
-                dd($th->getMessage());
+                $returnArr['valid'] = false;
+                $returnArr['msg'] = $th->getMessage();
             }
-            
         }
 
-        dd($validateArr);
+        if($returnArr['valid']) $returnArr['params'] = $reqVars;
+
+        return $returnArr;
     }
 
     //Validates the date in correct format or not
@@ -365,6 +392,7 @@ class EndPointController extends Controller
 
         //Check if request parameters are also allowed or not
         $validParams = $this->checkParameters();
+        
 
         if(!$validParams['valid'] || $validParams['msg']){
             return response()->json([
@@ -373,8 +401,25 @@ class EndPointController extends Controller
         }
 
         //Perform validation on the requested params before procedding
-        $queryParams = $this->validateParameters();
-        dd($queryParams);
+        $sendParams = null;
+        $validParams = $this->validateParameters();
+        
+        if(!$validParams['valid'] && $validParams['msg']){
+            return response()->json([
+                'error' => $validParams['msg']
+            ], 400);
+        }
+
+        //Set valid parameters for request
+        if($validParams['params']) $sendParams = $validParams['params'];
+        if(!$sendParams){
+            return response()->json([
+                'error' => 'No valid parameters found. '
+            ], 400);
+        }
+
+        //Set developer key
+        if(!array_key_exists('key', $sendParams)) $sendParams['key'] = $this->youtubeKey;
 
         try{
             //Prepare cURL client with configuration
@@ -384,25 +429,12 @@ class EndPointController extends Controller
 
             // Send a request
             $response = $client->request('GET', $this->currentEndpoint, [
-                'query' => $queryParams,
+                'query' => $sendParams,
                 'headers' => ['Referer' => env('APP_URL'), 'Accept'     => 'application/json']
             ]);
 
+            //Get request response
             $responseBody = json_decode($response->getBody()->getContents(), true);
-            
-            $excludeFields = $this->configObj['EndpointConfig']['excludeFields'];
-
-            foreach($excludeFields as $excludeKEys => &$excludeType){
-                if(is_array($excludeType)){
-                    foreach($responseBody['items'] as &$item){
-                        foreach($excludeType as $excludeItems){
-                            if($item[$excludeItems]) unset($item[$excludeItems]);
-                        }
-                    }
-                }else{
-                    if($responseBody[$excludeKEys]) unset($responseBody[$excludeKEys]);
-                }
-            }
 
             if($responseBody){
                 return response()->json([
