@@ -7,9 +7,12 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use Mockery\Exception;
 use phpDocumentor\Reflection\Types\Boolean;
+use App\Traits\GoogleAuthTrait;
 
 class EndPointController extends Controller
 {
+    use GoogleAuthTrait;
+
     private $requestObj;
     private $configObj;
     private $currentAction = null;
@@ -469,5 +472,14 @@ class EndPointController extends Controller
                 'error' => $error['message']
             ], $error['status']);
         }
+    }
+
+    //Generates the oAuth url from google
+    public function generateUrl(){
+        $defaultScope = array_search('https://www.googleapis.com/auth/youtube.readonly', $this->availableScopes);
+
+        $urlLink = $this->initAuth(true);
+
+        dd($urlLink);
     }
 }

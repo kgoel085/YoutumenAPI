@@ -31,6 +31,14 @@ $router->post('/generateToken', [
  */
 $router->group(['middleware' => 'jwt.auth', 'prefix' => 'api_v1'], function () use ($router) {
     $router->get('/{action}', 'EndPointController@performAction');
+
+    //This group belongs to endpoints  regarding google oAuth process
+    $router->group(['middleware' => 'google.auth', 'prefix' => 'authenticate', 'as' => 'oAuth'], function () use ($router) {
+        //Generates the oAuth Link 
+        $router->get('/getLink', 'EndPointController@generateUrl');
+    });
+
+    
 });
 
 // $router->get('/', function () use ($router) {
