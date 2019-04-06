@@ -65,7 +65,8 @@ $app->singleton(
 
 $app->routeMiddleware([
     'auth' => App\Http\Middleware\Authenticate::class,
-    'jwt.auth' => App\Http\Middleware\JWTAuth::class
+    'jwt.auth' => App\Http\Middleware\JWTAuth::class,
+    'google.auth' => App\Http\Middleware\GoogleOAuth::class
 ]);
 
 /*
