@@ -48,7 +48,7 @@ class JWTController extends Controller
      */
     protected function jwtToken(User $user){
         $payload = [
-            'iss' => env('APP_NAME'),
+            'iss' => Hash::make(env('APP_NAME')),
             'sub' => $user->id,
             'iat' => time(),
             'exp' => time() + env('JWT_EXPIRY', 10)*60

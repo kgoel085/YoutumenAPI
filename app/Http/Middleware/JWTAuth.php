@@ -8,6 +8,7 @@ use Exception;
 use App\User;
 Use Firebase\JWT\JWT;
 use Firebase\JWT\ExpiredException;
+use Illuminate\Support\Facades\Hash;
 
 class JWTAuth
 {
@@ -38,7 +39,15 @@ class JWTAuth
         }
 
         try {
-            $credentials = JWT::decode($token, env('JWT_SECRET'), ['HS256']);
+            $credentials = JWT::decode($token, env('JWT_SECRET'), [env('JWT_ALGO')]);
+
+            //Check the issuer is valid or not
+            if(!Hash::check(env('APP_NAME'), $credentials->iss)){
+                throw new Exception('Issuer is invalid');
+            }
+
+            $credentials->iss = env('APP_NAME');
+            
         } catch(ExpiredException $e) {
             return response()->json([
                 'error' => 'Provided token is expired.'
@@ -59,7 +68,12 @@ class JWTAuth
         }
         
         // Now let's put the user in the request class so that you can grab it from there
-        $request->auth = $user;
+        if($user){
+            $request->auth = $user;
+
+            //Add decoded token details in current request
+            $request->jwt = $credentials;
+        }
 
         //Check if configuration file exists or not 
         $configFile = str_replace('\\', '/', base_path()).'/config/endpoints.json';
