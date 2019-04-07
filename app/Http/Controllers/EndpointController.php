@@ -480,6 +480,10 @@ class EndPointController extends Controller
 
         $urlLink = $this->initAuth(true);
 
-        dd($urlLink);
+        if($urlLink){
+            return response()->json([
+                'success' => $urlLink
+            ], 200);
+        }
     }
 }
