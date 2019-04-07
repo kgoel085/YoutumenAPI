@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Hash;
 use Firebase\JWT\JWT;
 use Firebase\JWT\ExpiredException;
 
+use Symfony\Component\HttpFoundation\Cookie;
+
 class JWTController extends Controller
 {
 
@@ -72,7 +74,14 @@ class JWTController extends Controller
         if (!Hash::check($this->reqVars->input('password'), $user->password)) {
             return response()->json(['error' => 'Invalid password provided'], 401);
         }
-        //Return JWT with user details
-        return response()->json(['success' => ['token' => $this->jwtToken($user)]], 200);
+        
+        $response = response()->json(['success' => ['token' => $this->jwtToken($user)]], 200);
+
+        if(env('JWT_COOKIE') == true && env('JWT_COOKIE_NAME', null)){
+            $cookieName = Hash::make(env('JWT_COOKIE_NAME'));
+            $response = $response->withCookie(new Cookie($cookieName, $this->jwtToken($user), env('JWT_EXPIRY')));
+        }
+
+        return $response;
     }
 }
