@@ -33,9 +33,17 @@ $router->group(['middleware' => 'jwt.auth', 'prefix' => 'api_v1'], function () u
     $router->get('/{action}', 'EndPointController@performAction');
 
     //This group belongs to endpoints  regarding google oAuth process
-    $router->group(['middleware' => 'google.auth', 'prefix' => 'authenticate', 'as' => 'oAuth'], function () use ($router) {
+    $router->group(['middleware' => 'google.auth', 'prefix' => 'authenticate'], function () use ($router) {
         //Generates the oAuth Link 
         $router->get('/getLink', 'EndPointController@generateUrl');
+
+        //Register Verification token for current user
+        $router->post('/registerToken', 'EndPointController@registerToken');
+    });
+
+    //This group belongs to user authorized youtube endpoints
+    $router->group(['middleware' => 'google.auth', 'prefix' => 'user'], function () use ($router) {
+    
     });
 
     
