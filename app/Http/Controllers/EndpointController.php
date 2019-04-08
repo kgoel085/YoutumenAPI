@@ -7,12 +7,9 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use Mockery\Exception;
 use phpDocumentor\Reflection\Types\Boolean;
-use App\Traits\GoogleAuthTrait;
 
 class EndPointController extends Controller
 {
-    use GoogleAuthTrait;
-
     private $requestObj;
     private $configObj;
     private $currentAction = null;
