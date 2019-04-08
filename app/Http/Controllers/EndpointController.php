@@ -474,16 +474,5 @@ class EndPointController extends Controller
         }
     }
 
-    //Generates the oAuth url from google
-    public function generateUrl(){
-        $defaultScope = array_search('https://www.googleapis.com/auth/youtube.readonly', $this->availableScopes);
-
-        $urlLink = $this->initAuth(true);
-
-        if($urlLink){
-            return response()->json([
-                'success' => $urlLink
-            ], 200);
-        }
-    }
+    
 }
