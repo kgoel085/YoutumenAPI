@@ -71,6 +71,13 @@
             //Creates Google auth object from Triat
             $gClient = $this->initAuth();
 
+            //If google_token is present then return that back
+            if(array_key_exists('google_token', $request->jwt)){
+                return response()->json([
+                    'error' => 'Authorization already done'
+                ], 400);
+            }
+
             //Valdiate the received code
             $authToken = $gClient->fetchAccessTokenWithAuthCode($token);
 
@@ -81,16 +88,12 @@
             }
 
             //Set the authorize code
-            if(array_key_exists('access_token',$authToken)){
+            if($authToken){
                 //Save record in DB with unique token for server
                 $newToken = sha1(time());
 
-                $userToken = UserGoogleToken::where([['user_id', '=', $request->jwt->sub]])->first();
-                if($userToken){
-                    $userToken->token = $newToken;
-                    $userToken->g_auth_token = json_encode($authToken);
-                    $userToken->save();
-                }else{
+                $userToken = UserGoogleToken::where([['user_id', '=', $request->jwt->sub], ['token', '=', $newToken]])->first();
+                if(!$userToken){
                     $userToken = UserGoogleToken::create([
                         'user_id' => $request->jwt->sub,
                         'token' => $newToken,
@@ -98,7 +101,7 @@
                     ]);
                 }
 
-                
+                $newToken = $userToken->token;
 
                 //Generate new JWT token with google user details
                 $jwtObj = new JWTController($request);
