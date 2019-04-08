@@ -2,6 +2,8 @@
     namespace App\Traits;
 
     use Illuminate\Http\Request;
+    use App\Http\Controllers\JWTController;
+    use App\UserGoogleToken;
 
     /**
      * 
@@ -10,7 +12,7 @@
     {
         private $client;
         public $availableScopes = array(
-            'readOnly' => 'https://www.googleapis.com/auth/youtube.readonly',
+            'readOnly' => array('https://www.googleapis.com/auth/youtube.readonly', 'profile', 'email'),
             'manageAcc' => 'https://www.googleapis.com/auth/youtube',
             'editAcc' => 'https://www.googleapis.com/auth/youtube.force-ssl',
             'upload' => 'https://www.googleapis.com/auth/youtube.upload'
@@ -27,7 +29,6 @@
                 $client->setApplicationName(env('APP_NAME', 'Youtumen'));
                 $client->setClientId(env('GOOGLE_CLIENT_ID'));
                 $client->setClientSecret(env('GOOGLE_CLIENT_SECRET'));
-                $client->setAccessType("offline");        // offline access
                 $client->setIncludeGrantedScopes(true);   // incremental auth
                 $client->setScopes($scopes);  //user profile , email scope
                 if(env('GOOGLE_DEVELOPER_KEY', null)) $client->setDeveloperKey(env('GOOGLE_DEVELOPER_KEY'));
@@ -41,6 +42,70 @@
             }
             if($getUrl == false && $client) $returnVal = $client;
             return $returnVal;
+        }
+
+        //Generates the oAuth url from google
+        public function generateUrl(){
+            $defaultScope = array_search('https://www.googleapis.com/auth/youtube.readonly', $this->availableScopes);
+
+            $urlLink = $this->initAuth(true);
+
+            if($urlLink){
+                return response()->json([
+                    'success' => $urlLink
+                ], 200);
+            }
+        }
+
+        //Update the JWT token with the authorized access token
+        public function registerToken(Request $request){
+            $token = $authToken = $userObj = null;
+            if($request->token) $token = trim($request->token);
+
+            if(!$token){
+                return response()->json([
+                    'error' => 'Token not provided.'
+                ], 400);
+            }
+
+            //Creates Google auth object from Triat
+            $gClient = $this->initAuth();
+
+            //Valdiate the received code
+            $authToken = $gClient->fetchAccessTokenWithAuthCode($token);
+
+            if(!$authToken || (is_array($authToken) && array_key_exists('error', $authToken))){
+                return response()->json([
+                    'error' => 'Google authentication failed. Please try again. '.$authToken['error_description']
+                ], 400);
+            }
+
+            //Set the authorize code
+            if(array_key_exists('access_token',$authToken)){
+                //Save record in DB with unique token for server
+                $newToken = sha1(time());
+
+                $userToken = UserGoogleToken::where([['user_id', '=', $request->jwt->sub]])->first();
+                if($userToken){
+                    $userToken->token = $newToken;
+                    $userToken->g_auth_token = json_encode($authToken);
+                    $userToken->save();
+                }else{
+                    $userToken = UserGoogleToken::create([
+                        'user_id' => $request->jwt->sub,
+                        'token' => $newToken,
+                        'g_auth_token' => json_encode($authToken)
+                    ]);
+                }
+
+                
+
+                //Generate new JWT token with google user details
+                $jwtObj = new JWTController($request);
+                $response = $jwtObj->generateToken(array('authToken' => $newToken));
+
+                return $response;
+            }
         }
     }
     
