@@ -30,23 +30,21 @@ $router->post('/generateToken', [
  * Below routes require JWT token in order to pass
  */
 $router->group(['middleware' => 'jwt.auth', 'prefix' => 'api_v1'], function () use ($router) {
+    //This group belongs to user authorized youtube endpoints
+    $router->group(['middleware' => 'google.auth', 'prefix' => 'user'], function () use ($router) {
+        $router->get('/{action}', 'EndPointController@performAction');
+    });
+
     $router->get('/{action}', 'EndPointController@performAction');
 
     //This group belongs to endpoints  regarding google oAuth process
     $router->group(['prefix' => 'authenticate'], function () use ($router) {
         //Generates the oAuth Link 
-        $router->get('/getLink', 'GoogleAuthController@generateUrl');
+        $router->get('/getLink', 'EndPointController@generateUrl');
 
         //Register Verification token for current user
-        $router->post('/registerToken', 'GoogleAuthController@registerToken');
+        $router->post('/registerToken', 'EndPointController@registerToken');
     });
-
-    //This group belongs to user authorized youtube endpoints
-    $router->group(['middleware' => 'google.auth', 'prefix' => 'user'], function () use ($router) {
-        $router->get('/subscriptions', 'GoogleAuthController@getSubscriptions');
-    });
-
-    
 });
 
 // $router->get('/', function () use ($router) {
