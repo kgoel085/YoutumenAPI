@@ -18,7 +18,7 @@
                 "default": "snippet", 
                 "type": "string", 
                 "possibleVals":[
-                    "auditDetails", "brandingSettings", "contentDetails", "contentOwnerDetails", "id", "localizations", "snippet", "statistics", "status", "topicDetails", "targeting", "fileDetails", "liveStreamingDetails", "processingDetails", "recordingDetails", "suggestions", "topicDetails"
+                    "auditDetails", "brandingSettings", "contentDetails", "contentOwnerDetails", "id", "localizations", "snippet", "statistics", "status", "topicDetails", "targeting", "fileDetails", "liveStreamingDetails", "processingDetails", "recordingDetails", "suggestions", "topicDetails", "subscriberSnippet"
                 ]
             }
         },
@@ -111,6 +111,14 @@
                     "type",
                     "fields"
                 ]
+            },
+            "myRecentSubscribers":{
+                "type": "boolean",
+                "requiredAuth": true
+            },
+            "mySubscribers":{
+                "type": "boolean",
+                "requiredAuth": true
             }
         },
 
@@ -165,7 +173,10 @@
                     "relevance",
                     "title",
                     "videoCount",
-                    "viewCount"
+                    "viewCount",
+                    "alphabetical", 
+                    "relevance",
+                    "unread"
                 ]
             },
             "locationRadius":{
@@ -500,6 +511,35 @@
                     "videoLicense",
                     "videoSyndicated",
                     "videoType"
+                ]
+            }
+        },
+        "subscriptions":{
+            "endpoint": "subscriptions",
+            "params":{
+                "required":{
+                    "part":{
+                        "possibleVals":[
+                            "snippet", "contentDetails", "id", "subscriberSnippet"
+                        ]
+                    }
+                },
+
+                "filters":[
+                    "channelId",
+                    "id",
+                    "mine",
+                    "myRecentSubscribers",
+                    "mySubscribers"
+                ],
+
+                "optional":[
+                    "forChannelId",
+                    "maxResults",
+                    "onBehalfOfContentOwner",
+                    "onBehalfOfContentOwnerChannel",
+                    "order",
+                    "pageToken"
                 ]
             }
         }
