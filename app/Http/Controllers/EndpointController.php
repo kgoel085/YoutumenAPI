@@ -7,9 +7,12 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use Mockery\Exception;
 use phpDocumentor\Reflection\Types\Boolean;
+use App\Traits\GoogleAuthTrait;
 
 class EndPointController extends Controller
 {
+    use GoogleAuthTrait;
+
     private $requestObj;
     private $configObj;
     private $currentAction = null;
@@ -204,6 +207,8 @@ class EndPointController extends Controller
 
                         if(count($tmpArr) > 1){
                             throw new Exception("One or more filter is set. Please set only one filter from these: ".implode(',', $allowedParams));
+                        }elseif(count($tmpArr) == 0){
+                            throw new Exception("One or more filter is required. Please set atleast one filter from these: ".implode(',', $allowedParams));
                         }
                     }
     
@@ -265,7 +270,7 @@ class EndPointController extends Controller
                                         foreach($currentVal as $currentKey){
                                             $searchedKey11 = "";
                                             $searchedKey11 = array_search($currentKey, $checkValuesArr);
-                                            if($searchedKey11 === false || !$checkValuesArr[$searchedKey11]){
+                                            if(!$checkValuesArr[$searchedKey11]){
                                                 throw new Exception($currentKey.' is an invalid value for '.$filterKey.' parameter. Possible valid values are: '.implode(',', $checkValuesArr));
                                                 break;
                                             }
@@ -325,7 +330,7 @@ class EndPointController extends Controller
                                 case 'requiredAuth':
                                     $checkValuesArr = $currentFilter[$filterKey][$action];
                                     if($checkValuesArr){
-                                        if(!$this->requestObj->gToken){
+                                        if(!$this->requestObj->jwt->google_token){
                                             throw new Exception($filterKey.' requires authorization tokken.');
                                         }
                                     }
@@ -437,9 +442,14 @@ class EndPointController extends Controller
             ]);
 
             // Send a request
+            $headersArr = array('Referer' => env('APP_URL'), 'Accept'     => 'application/json');
+            
+            //If googel auth token is available then attach it to headers
+            if($this->requestObj->jwt->google_token) $headersArr['Authorization'] = 'Bearer '.$this->requestObj->jwt->google_token;
+            
             $response = $client->request('GET', $this->currentEndpoint, [
                 'query' => $sendParams,
-                'headers' => ['Referer' => env('APP_URL'), 'Accept'     => 'application/json']
+                'headers' => $headersArr
             ]);
 
             //Get request response
